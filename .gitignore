@@ -1,0 +1,5 @@
+/history.txt
+*.conf
+!example.conf
+*.swp
+*.pyc
