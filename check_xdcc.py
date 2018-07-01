@@ -16,11 +16,14 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import ConfigParser
 import os
 import re
 import subprocess
 import sys
+if sys.version_info.major <= 2:
+    from ConfigParser import RawConfigParser
+else:
+    from configparser import RawConfigParser
 
 import requests
 
@@ -28,12 +31,12 @@ def parse_config(filepath):
     if not os.path.isfile(filepath):
         return None
 
-    config = ConfigParser.RawConfigParser()
+    config = RawConfigParser()
     config.read(filepath)
 
-    required = [('main', 'packlist_url'), ('main', 'output_dir'), ('irc', 'irc_nick'),
-                ('irc', 'irc_server'), ('irc', 'irc_port'), ('irc', 'irc_channel'),
-                ('irc', 'irc_bot')]
+    required = [('main', 'packlist_url'), ('main', 'output_dir'), ('main', 'retries'),
+                ('irc', 'irc_nick'), ('irc', 'irc_server'), ('irc', 'irc_port'),
+                ('irc', 'irc_channel'), ('irc', 'irc_bot')]
 
     for section, item in required:
         if not config.has_option(section, item):
@@ -81,16 +84,38 @@ def get_packlist_matches(config):
 
     return matches
 
-def xdcc_send(config, package):
+def xdcc_send(config, package_info):
+    filename, package = package_info
+    retries = config.getint('main', 'retries')
     odir = config.get('main', 'output_dir')
     nick = config.get('irc', 'irc_nick')
     server = config.get('irc', 'irc_server')
     port = config.get('irc', 'irc_port')
     channel = config.get('irc', 'irc_channel')
     bot = config.get('irc', 'irc_bot')
+    filepath = os.path.join(odir, filename)
 
-    cmd = ['/usr/bin/python', 'xdcc_dl.py', '-p', port, nick, server, channel, bot, package, odir]
-    return subprocess.call(cmd, stdout=open('/dev/null', 'wb'))
+    for attempt in range(retries):
+        # Create command
+        cmd = ['/usr/bin/python', 'xdcc_dl.py', '-p', port]
+        if attempt == 0:
+            pass
+        elif os.path.isfile(filepath):
+            # There was an error, but some data was received, attempt resume
+            resume_from = os.path.getsize(filepath)
+            cmd += ['-r', str(resume_from)]
+        else:
+            # There was an error and no data, bail out!
+            break
+        cmd += [nick, server, channel, bot, package, odir]
+
+        ret_code = subprocess.call(cmd, stdout=open('/dev/null', 'wb'))
+        if ret_code == 0:
+            break
+
+    if ret_code == 2 and os.path.isfile(filepath):
+        os.remove(filepath)  # Incomplete file
+    return ret_code
 
 def main():
     if len(sys.argv) != 2:
@@ -119,7 +144,7 @@ def main():
     history = [file[0] for file in matched_files] + history
 
     for file in matched_files:
-        ret = xdcc_send(config, file[1])
+        ret = xdcc_send(config, file)
         if ret != 0:
             sys.stderr.write(u'Failed to download file' + file[0] + u"\n")
             sys.exit(1)
