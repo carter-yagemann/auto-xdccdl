@@ -41,22 +41,45 @@ def on_disconnect(connection, event):
     raise SystemExit()
 
 def on_ctcp(connection, event):
-    global dcc, file, received_bytes, filename
+    global dcc, file, received_bytes, filename, filesize, peer_address
 
-    if len(event.arguments) < 2:
-        return
-    payload = event.arguments[1]
-    parts = shlex.split(payload)
-    command, filename, peer_address, peer_port, size = parts
-    if command != "SEND":
-        print('Unexpected command', command)
-        return
-    filename = os.path.join(args.save_dir, filename)
-    file = open(filename, "wb")
-    peer_address = irc.client.ip_numstr_to_quad(peer_address)
-    peer_port = int(peer_port)
-    received_bytes = 0
-    dcc = reactor.dcc("raw").connect(peer_address, peer_port)
+    nick = event.source.nick
+    if event.arguments[0] == "VERSION":
+        version = "Python irc.bot ({version})".format(version=irc.client.VERSION_STRING)
+        connection.ctcp_reply(nick, "VERSION " + version)
+    elif event.arguments[0] == "PING":
+        if len(event.arguments) > 1:
+            connection.ctcp_reply(nick, "PING " + event.arguments[1])
+    elif event.arguments[0] == "DCC":
+        payload = event.arguments[1]
+        parts = shlex.split(payload)
+        command = parts[0]
+        if command == "SEND" and args.resume == 0:
+            command, filename, peer_address, peer_port, filesize = parts
+            filename = os.path.join(args.save_dir, filename)
+            file = open(filename, "wb")
+            peer_address = irc.client.ip_numstr_to_quad(peer_address)
+            peer_port = int(peer_port)
+            filesize = int(filesize)
+            received_bytes = 0
+            dcc = reactor.dcc("raw").connect(peer_address, peer_port)
+        elif command == "SEND" and args.resume > 0:
+            command, filename, peer_address, peer_port, filesize = parts
+            connection.ctcp_reply(nick, "DCC RESUME \"" + filename + "\" " + peer_port + " " + str(args.resume))
+        elif command == "ACCEPT" and args.resume > 0:
+            command, filename, peer_port, position = parts
+            filename = os.path.join(args.save_dir, filename)
+            file = open(filename, "ab")
+            peer_address = irc.client.ip_numstr_to_quad(peer_address)
+            peer_port = int(peer_port)
+            filesize = int(filesize)
+            received_bytes = int(position)
+            dcc = reactor.dcc("raw").connect(peer_address, peer_port)
+        else:
+            print('Unexpected DCC message', payload)
+            raise SystemExit(1)
+    else:
+        print('Unexpected CTCP message', event.arguments[0])
 
 def on_dccmsg(connection, event):
     global received_bytes
@@ -69,9 +92,12 @@ def on_dccmsg(connection, event):
     dcc.send_bytes(struct.pack("!I", received_bytes))
 
 def on_dcc_disconnect(connection, event):
-    global filename, received_bytes, file
+    global filename, received_bytes, file, filesize
     file.close()
     print("Received file %s (%d bytes)." % (filename, received_bytes))
+    if received_bytes != filesize:
+        print("Expected filesize to be %d bytes, got %d." % (filesize, received_bytes))
+        raise SystemExit(2)
     raise SystemExit()
 
 def get_args():
@@ -83,6 +109,8 @@ def get_args():
     parser.add_argument('package', type=str)
     parser.add_argument('save_dir', type=str)
     parser.add_argument('-p', '--port', default=6667, type=int)
+    parser.add_argument('-r', '--resume', default=0, type=int,
+                        help='Resume downloading from provided byte offset')
     return parser.parse_args()
 
 def main():
