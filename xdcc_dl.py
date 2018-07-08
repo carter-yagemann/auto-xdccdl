@@ -96,7 +96,7 @@ def on_dcc_disconnect(connection, event):
     file.close()
     print("Received file %s (%d bytes)." % (filename, received_bytes))
     if received_bytes != filesize:
-        print("Expected filesize to be %d bytes, got %d." % (filesize, received_bytes))
+        print("Expected filesize to be %d bytes, got %d." % (int(filesize), int(received_bytes)))
         raise SystemExit(2)
     raise SystemExit()
 
