@@ -49,7 +49,7 @@ def on_ctcp(connection, event):
         connection.ctcp_reply(nick, "VERSION " + version)
     elif event.arguments[0] == "PING":
         if len(event.arguments) > 1:
-            connection.ctcp_reply(nick, "PING " + event.arguments[1])
+            connection.ctcp_reply(nick, "PONG " + event.arguments[1])
     elif event.arguments[0] == "DCC":
         payload = event.arguments[1]
         parts = shlex.split(payload)
