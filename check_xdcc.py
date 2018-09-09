@@ -95,6 +95,9 @@ def xdcc_send(config, package_info):
     bot = config.get('irc', 'irc_bot')
     filepath = os.path.join(odir, filename)
 
+    sys.stdout.write('Downloading ' + str(filename) + "\n")
+    sys.stdout.flush()
+
     for attempt in range(retries):
         # Create command
         cmd = ['/usr/bin/python', 'xdcc_dl.py', '-p', port]
