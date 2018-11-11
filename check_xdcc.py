@@ -143,14 +143,13 @@ def main():
     matched_files = get_packlist_matches(config)
     # Remove files we've already downloaded before
     matched_files = [file for file in matched_files if not file[0] in history]
-    # Update history
-    history = [file[0] for file in matched_files] + history
 
     for file in matched_files:
         ret = xdcc_send(config, file)
         if ret != 0:
             sys.stderr.write(u'Failed to download file' + file[0] + u"\n")
-            sys.exit(1)
+        else:
+            history.append(file[0])
 
     save_downloads(history)
 
