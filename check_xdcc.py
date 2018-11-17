@@ -17,6 +17,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import random
 import re
 import subprocess
 import sys
@@ -27,6 +28,10 @@ else:
 
 import requests
 
+def random_nick():
+   letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+   return ''.join(random.choice(letters) for i in range(8))
+
 def parse_config(filepath):
     if not os.path.isfile(filepath):
         return None
@@ -35,7 +40,7 @@ def parse_config(filepath):
     config.read(filepath)
 
     required = [('main', 'packlist_url'), ('main', 'output_dir'), ('main', 'retries'),
-                ('irc', 'irc_nick'), ('irc', 'irc_server'), ('irc', 'irc_port'),
+                ('irc', 'irc_server'), ('irc', 'irc_port'),
                 ('irc', 'irc_channel'), ('irc', 'irc_bot')]
 
     for section, item in required:
@@ -88,7 +93,7 @@ def xdcc_send(config, package_info):
     filename, package = package_info
     retries = config.getint('main', 'retries')
     odir = config.get('main', 'output_dir')
-    nick = config.get('irc', 'irc_nick')
+    nick = random_nick()
     server = config.get('irc', 'irc_server')
     port = config.get('irc', 'irc_port')
     channel = config.get('irc', 'irc_channel')
@@ -124,6 +129,8 @@ def main():
     if len(sys.argv) != 2:
         sys.stdout.write(u'Usage: ' + sys.argv[0] + u" <config>\n")
         sys.exit(1)
+
+    random.seed()
 
     # set cwd to directory containing this script
     os.chdir(os.path.dirname(sys.argv[0]))
