@@ -28,6 +28,7 @@ import os
 import re
 import sys
 import platform
+import urllib
 if sys.version_info.major <= 2:
     from ConfigParser import RawConfigParser
 else:
@@ -103,8 +104,14 @@ def get_packlist_matches(config):
         patterns.append(re.compile(pattern[1]))
 
     matches = list()
+
     packlist = config.get('main', 'packlist')
-    for line in requests.get(packlist).text.split("\n"):  # TODO - Depricate requests
+    res = urllib.urlopen(packlist)
+    if res.getcode() != 200:
+        print("Unexpected HTTP response: " + str(res.getcode())
+        return matches
+
+    for line in [text.strip() for text in res.readlines()]:
         if len(line) == 0 or line[0] != '#':
             continue
         parts = [part for part in line.split(' ') if part != '']
