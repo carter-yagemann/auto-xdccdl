@@ -19,7 +19,7 @@
 from __future__ import print_function
 
 __module_name__ = "AutoXdcc"
-__module_version__ = "1.0"
+__module_version__ = "1.1"
 __module_description__ = "Queries a packlist and requests new files matching provided regular expressions."
 __module_author__ = "Carter Yagemann <yagemann@protonmail.com>"
 
@@ -29,7 +29,6 @@ import os
 import re
 import sys
 import platform
-from time import sleep
 if sys.version_info.major <= 2:
     from ConfigParser import RawConfigParser
 else:
@@ -123,14 +122,11 @@ def get_packlist_matches(config):
 
     return matches
 
-def xdcc_send(config, package_info):
+def xdcc_send(userdata):
+    config, package_info = userdata
     filename, package = package_info
     bot = config.get('irc', 'bot')
-    try:
-        xchat.command('msg ' + bot + ' XDCC SEND ' + str(package))
-    except AttributeError:
-        return 1
-    return 0
+    xchat.command('msg ' + bot + ' XDCC SEND ' + str(package))
 
 def check_and_send(config_name):
     config_path = os.path.join(config_dir, config_name + ".conf")
@@ -165,13 +161,8 @@ def check_and_send(config_name):
     matched_files = [file for file in matched_files if not file[0] in history]
 
     for idx, file in enumerate(matched_files):
-        ret = xdcc_send(config, file)
-        if ret == 0:
-            history.append(file[0])
-        else:
-            print("Failed to request package from " + bot)
-        if idx < len(matched_files) - 1:
-            sleep(3)
+        xchat.hook_timer(idx * 5000, xdcc_send, userdata=(config, file))
+        history.append(file[0])
 
     save_downloads(history)
 
