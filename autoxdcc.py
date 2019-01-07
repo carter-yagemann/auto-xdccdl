@@ -16,19 +16,20 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
+
 __module_name__ = "AutoXdcc"
 __module_version__ = "1.0"
 __module_description__ = "Queries a packlist and requests new files matching provided regular expressions."
 __module_author__ = "Carter Yagemann <yagemann@protonmail.com>"
 
-from __future__ import print_function
-
 import xchat
+import requests
 import os
 import re
 import sys
 import platform
-import urllib
+from time import sleep
 if sys.version_info.major <= 2:
     from ConfigParser import RawConfigParser
 else:
@@ -106,12 +107,12 @@ def get_packlist_matches(config):
     matches = list()
 
     packlist = config.get('main', 'packlist')
-    res = urllib.urlopen(packlist)
-    if res.getcode() != 200:
-        print("Unexpected HTTP response: " + str(res.getcode())
+    res = requests.get(packlist)
+    if res.status_code != 200:
+        print("Unexpected HTTP response: " + str(res.getcode()))
         return matches
 
-    for line in [text.strip() for text in res.readlines()]:
+    for line in res.text.split("\n"):
         if len(line) == 0 or line[0] != '#':
             continue
         parts = [part for part in line.split(' ') if part != '']
@@ -184,15 +185,18 @@ def main(word, word_eol, userdata):
 
     return xchat.EAT_ALL
 
-config_dir = get_config_dir()
-if config_dir is None:
-    print("Failed to find config directory path")
-    return
-if not os.path.isdir(config_dir):
-    if os.path.exists(config_dir):
-        print(config_dir + " exists and is not a directoy, cannot initialize")
+def init():
+    if config_dir is None:
+        print("Failed to find config directory path")
         return
-    os.makedirs(config_dir)
+    if not os.path.isdir(config_dir):
+        if os.path.exists(config_dir):
+            print(config_dir + " exists and is not a directoy, cannot initialize")
+            return
+        os.makedirs(config_dir)
 
-xchat.hook_command("autoxdcc", main, help="/autoxdcc <config_name>")
-print("autoxdcc loaded")
+    xchat.hook_command("autoxdcc", main, help="/autoxdcc <config_name>")
+    print("AutoXdcc loaded")
+
+config_dir = get_config_dir()
+init()

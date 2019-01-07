@@ -4,9 +4,15 @@ regular expressions (regex).
 
 # Setup
 
-Copy `autoxdcc.py` into your plugins directory (e.g. `~/.config/hexchat/addons`)
-and enable it. It'll create its own config directory (e.g. `~/.config/AutoXdcc`).
-Make a config in this directory for each bot. See `example.conf`.
+1. Install the `requests package:
+
+    pip install requests
+
+2. Copy `autoxdcc.py` into your plugins directory (e.g. `~/.config/hexchat/addons`)
+and enable it.
+
+3. It'll create its own config directory (e.g. `~/.config/AutoXdcc`). Make a config
+in this directory for each bot. See `example.conf`.
 
 # Usage
 
