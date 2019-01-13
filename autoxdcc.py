@@ -19,7 +19,7 @@
 from __future__ import print_function
 
 __module_name__ = "AutoXdcc"
-__module_version__ = "1.1"
+__module_version__ = "1.2"
 __module_description__ = "Queries a packlist and requests new files matching provided regular expressions."
 __module_author__ = "Carter Yagemann <yagemann@protonmail.com>"
 
@@ -114,9 +114,11 @@ def get_packlist_matches(config):
     for line in res.text.split("\n"):
         if len(line) == 0 or line[0] != '#':
             continue
-        parts = [part for part in line.split(' ') if part != '']
-        packnum = parts[0][1:]
-        filename = ' '.join(parts[3:])
+        if len(line) < 19:
+            print('Cannot parse line: ' + line)
+            continue
+        packnum = [part for part in line.split(' ') if part != ''][0][1:]
+        filename = line[19:]
         if True in [not pat.match(filename) is None for pat in patterns]:
             matches.append((filename, packnum))
 
@@ -159,6 +161,9 @@ def check_and_send(config_name):
     matched_files = get_packlist_matches(config)
     # Remove files we've already downloaded before
     matched_files = [file for file in matched_files if not file[0] in history]
+
+    if len(matched_files) == 0:
+        print("No new files to download")
 
     for idx, file in enumerate(matched_files):
         xchat.hook_timer(idx * 5000, xdcc_send, userdata=(config, file))
