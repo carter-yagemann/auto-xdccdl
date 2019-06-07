@@ -1,12 +1,12 @@
 This project is a `xchat` (XChat, HexChat, etc.) plugin that can be used to
-automatically query an IRC XDCC bot packlist and download new files that match
+automatically query [nibl](https://nibl.co.uk) for a bot packlist and download new files that match
 regular expressions (regex).
 
 # Setup
 
-1. Install the `requests package:
+1. Install python module packages:
 
-    pip install requests
+    pip install requests lxml
 
 2. Copy `autoxdcc.py` into your plugins directory (e.g. `~/.config/hexchat/addons`)
 and enable it.

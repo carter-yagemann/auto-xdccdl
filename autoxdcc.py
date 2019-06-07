@@ -19,8 +19,8 @@
 from __future__ import print_function
 
 __module_name__ = "AutoXdcc"
-__module_version__ = "1.2"
-__module_description__ = "Queries a packlist and requests new files matching provided regular expressions."
+__module_version__ = "1.3"
+__module_description__ = "Queries nibl and requests new files matching provided regular expressions."
 __module_author__ = "Carter Yagemann <yagemann@protonmail.com>"
 
 import xchat
@@ -29,6 +29,7 @@ import os
 import re
 import sys
 import platform
+from lxml import html
 if sys.version_info.major <= 2:
     from ConfigParser import RawConfigParser
 else:
@@ -66,7 +67,7 @@ def parse_config(filepath):
     config = RawConfigParser()
     config.read(filepath)
 
-    required = [('main', 'packlist'), ('irc', 'channel'), ('irc', 'bot')]
+    required = [('irc', 'channel'), ('irc', 'bot')]
 
     for section, item in required:
         if not config.has_option(section, item):
@@ -105,20 +106,21 @@ def get_packlist_matches(config):
 
     matches = list()
 
-    packlist = config.get('main', 'packlist')
-    res = requests.get(packlist)
+    # Query nibl for this bot
+    res = requests.get('https://nibl.co.uk/bots.php', params={'bot': config.get('irc', 'bot')})
     if res.status_code != 200:
         print("Unexpected HTTP response: " + str(res.getcode()))
         return matches
 
-    for line in res.text.split("\n"):
-        if len(line) == 0 or line[0] != '#':
-            continue
-        if len(line) < 19:
-            print('Cannot parse line: ' + line)
-            continue
-        packnum = [part for part in line.split(' ') if part != ''][0][1:]
-        filename = line[19:]
+    # Query parse packlist provided by nibl
+    tree = html.fromstring(res.text.encode('utf8'))
+    raw_items = tree.xpath('//tr[@class="botlistitem first"]') \
+              + tree.xpath('//tr[@class="botlistitem"]')       \
+              + tree.xpath('//tr[@class="botlistitem last"]')
+
+    for item in raw_items:
+        packnum = item[2].text.strip()
+        filename = item[4].text.strip()
         if True in [not pat.match(filename) is None for pat in patterns]:
             matches.append((filename, packnum))
 
