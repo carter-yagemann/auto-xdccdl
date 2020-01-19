@@ -14,12 +14,12 @@
 #    GNU General Public License for more details.
 #
 #    You should have received a copy of the GNU General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from __future__ import print_function
 
 __module_name__ = "AutoXdcc"
-__module_version__ = "1.3"
+__module_version__ = "1.4"
 __module_description__ = "Queries nibl and requests new files matching provided regular expressions."
 __module_author__ = "Carter Yagemann <yagemann@protonmail.com>"
 
@@ -35,30 +35,8 @@ if sys.version_info.major <= 2:
 else:
     from configparser import RawConfigParser
 
-def whoami():
-    try:
-        cmd = os.popen("whoami")
-        try:
-            user = cmd.readlines()
-            user = user[0].strip("\n")
-        finally:
-            cmd.close()
-    except IOError:
-        return None
-    return user
-
 def get_config_dir():
-    user = whoami()
-    if user is None:
-        return None
-    system = platform.system()
-    if system == 'Windows':
-        return 'C:/Users/' + user + '/.config/AutoXdcc/'
-    elif system == 'Linux':
-        return '/home/' + user + '/.config/AutoXdcc/'
-    else:
-        print("Unsupported OS: " + str(system))
-        return None
+    return os.path.expanduser('~/.config/AutoXdcc/')
 
 def parse_config(filepath):
     if not os.path.isfile(filepath):
