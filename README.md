@@ -4,15 +4,29 @@ regular expressions (regex).
 
 # Setup
 
-1. Install python module packages:
+## Linux
 
-    pip install requests lxml
+1. Install Python and HexChat: `sudo apt install python3 python3-pip hexchat hexchat-python3`
 
-2. Copy `autoxdcc.py` into your plugins directory (e.g. `~/.config/hexchat/addons`)
-and enable it.
+2. Install python module packages: `sudo pip install requests lxml`
 
-3. It'll create its own config directory (e.g. `~/.config/AutoXdcc`). Make a config
-in this directory for each bot. See `example.conf`.
+3. Copy `autoxdcc.py` into your plugins directory (`~/.config/hexchat/addons`).
+
+4. It'll create its own config directory (`~/.config/AutoXdcc`). Make a config
+in this directory for each bot (see `example.conf`).
+
+## Windows
+
+1. Install [HexChat](https://hexchat.github.io/downloads.html), make sure
+to check `Python Interface => Python 3.6`.
+
+2. Start Command Prompt as Administrator and install python module
+packages: `python -m pip install requests lxml`
+
+3. Copy `autoxdcc.py` into your plugins directory (`%APPDATA%\HexChat\addons`).
+
+4. It'll create its own config directory (`%HOMEPATH%\.config\AutoXdcc`). Make a config
+in this directory for each bot (see `example.conf`).
 
 # Usage
 
@@ -20,6 +34,6 @@ In your IRC client, use the command:
 
     /autoxdcc <config_name>
 
-For example, if you created a config named `example.conf`:
+For example, for a config named `example.conf`:
 
     /autoxdcc example
